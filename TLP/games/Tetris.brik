@@ -1,0 +1,139 @@
+//TETRIS// 
+//Conceptos generales//
+
+str nombre_juego = "BlockStorm"
+list dimension = [10, 20]
+int velocidad_inicial = 1
+
+//Tablero figuras//
+
+
+//[0,0] [1,0] [2,0] [3,0]//
+//[0,1] [1,1] [2,1] [3,1]//
+//[0,2] [1,2] [2,2] [3,2]//
+//[0,3] [1,3] [2,3] [3,3]//
+
+//Figuras//
+
+class figura_linea = {
+    str color = "#0EC2E6" //Celeste// 
+    list rotaciones = [
+                [[1,0],[1,1],[1,2],[1,3]], //Rotación 0°//
+                [[0,1],[1,1],[2,1],[3,1]] //Rotación 180°//
+    ]
+}
+
+class figura_cuadro = {
+    str color = "#F1F505" //Amarillo//
+    list rotaciones =[ 
+                [[1,1],[2,1],[1,2],[2,2]] //Rotación 0°//
+    ]
+}    
+
+class figura_s = { 
+	str color = "#00FF00" //Verde//
+    list rotaciones = [
+                [[1,0],[2,0],[0,1],[1,1]], //Rotación 0°//
+                [[0,0],[0,1],[1,1],[1,2]], //Rotación 90°//
+    ]
+}
+
+class figura_z = { 
+	str color = "#F5023B" //Rojo//
+    list rotaciones =[
+                [[0,0],[1,0],[1,1],[2,1]] //Rotación 0°//
+                [[1,0],[0,1],[1,1],[0,2]] //Rotación 90°//
+    ]
+}
+
+class figura_t = {
+ 	str color = "#A020F0" //Morado//
+    list rotaciones = [ 
+                [[1,1],[0,2],[1,2],[2,2]], //Rotación 0°//
+                [[1,0],[1,1],[2,1],[1,2]], //Rotación 90°//
+                [[0,1],[1,1],[2,1],[1,2]], //Rotación 180°//
+                [[1,0],[0,1],[1,1],[1,2]], //Rotación 270°//
+    ] 
+} 
+
+class figura_pistola_inversa = { 
+	str color = "#050DF5" //Azul Oscuro//
+	list rotaciones = [ 
+                [[1,0],[1,1],[2,1],[3,1]], //Rotación 0°//
+                [[2,0],[2,1],[1,2],[2,2]], //Rotación 90°//
+                [[1,1],[2,1],[3,1],[3,2]], //Rotación 180°//
+                [[2,0],[3,0],[2,1],[2,2]] //Rotación 270°//
+    ]
+}
+
+class figura_pistola_derecha ={ 
+    str color = "#FFA500" //Naranja//
+    list rotaciones = [ 
+                [[1,1],[2,1],[3,1],[3,0]], //Rotación 0°//
+                [[1,0],[2,0],[2,1],[2,2]], //Rotación 90°//
+                [[1,2],[1,1],[2,1],[3,1]], //Rotación 180°//
+                [[1,1],[1,2],[1,3],[2,3]] //Rotación 270°//
+    ]
+}
+
+
+//Reglas//
+
+class regla_puntuacion = {
+    str evento = "fila_llena"
+    str accion = "eliminar_fila"
+    int puntos = 10
+    list multiplicador_puntos = [2,3,4]
+}
+
+class regla_inicio_juego = {
+    str evento = "juego_iniciado"
+    str accion = "inicio_juego"
+}
+
+class regla_fin_juego = {
+    str evento = "figura_sin_espacio"
+    str accion = "fin_juego"
+}
+
+class regla_niveles = {
+    str evento = "avanzar_nivel"
+    float aumento_velocidad = 1.3
+}
+
+class regla_caida_rapida = {
+    str evento = "pieza_descendida"
+    str accion = "asignar_puntos"
+    int puntos = 2
+}
+
+class regla_modo_espejo = {
+    str evento = "powerup_espejo"
+    int duracion = 10
+    str accion = "controles_invertidos"
+}
+
+class regla_tsunami = {
+    str evento = "boton_tsunami"
+    str accion = "destruir_fila"
+    int destruccion = 2          //filas//
+}
+
+class regla_bomba = {
+    str evento = "boton_bomba"
+    str accion = "explotar"
+    int radio = 3
+}
+
+//Controles del Juego//
+class controles = {
+    str mover_izquierda = "a"
+    str mover_derecha = "d"
+    str acelerar_abajo = "s"
+    str pausa = "esc"
+    str boton_tsunami = "t"
+    str boton_bomba = "k"
+}
+
+list figuras_disponibles = [figura_linea, figura_cuadro, figura_s, figura_z, figura_t, figura_pistola_inversa, figura_pistola_derecha]
+
