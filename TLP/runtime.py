@@ -65,7 +65,7 @@ class Juego:
                 elif key == 's': self.snake_cambiar_direccion('DOWN')
                 elif key == 'a': self.snake_cambiar_direccion('LEFT')
                 elif key == 'd': self.snake_cambiar_direccion('RIGHT')
-            elif key == 'q':
+            if key == 'q':
                 self.juego_terminado = True
 
     def dibujar(self):
@@ -106,17 +106,18 @@ class Juego:
             if y == 5: linea += "     WASD"
             if y == 6: linea += "     'q': Salir"
             if y == 8: linea += "    PODERES:"
-            if len(self.poderes_tetris) != 0:
-                if len(self.poderes_tetris) == 2:
-                    if y == 9: linea += "     TSUNAMI(T)"
-                    if y == 10: linea += "      BOMBA(K)"
-                else:
-                    if self.poderes_tetris[0] == "tsunami":
+            if self.tipo_juego == "TETRIS":
+                if len(self.poderes_tetris) != 0:
+                    if len(self.poderes_tetris) == 2:
                         if y == 9: linea += "     TSUNAMI(T)"
+                        if y == 10: linea += "      BOMBA(K)"
                     else:
-                        if y == 9: linea += "      BOMBA(K)"
-            else:
-                if y == 9: linea += "     No tienes poderes disponibles"
+                        if self.poderes_tetris[0] == "tsunami":
+                            if y == 9: linea += "     TSUNAMI(T)"
+                        else:
+                            if y == 9: linea += "      BOMBA(K)"
+                else:
+                    if y == 9: linea += "     No tienes poderes disponibles"
             
             buffer_pantalla.append(linea)
         buffer_pantalla.append("#" * (self.ancho * 2 + 4))
