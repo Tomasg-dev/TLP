@@ -20,7 +20,7 @@ class Juego:
         self.alto = config.get('grid_size', [10, 20])[1]
         self.grid = [[0 for _ in range(self.ancho)] for _ in range(self.alto)]
         self.puntuacion = 0
-        self.probabilidad_poderes = 0.9
+        self.probabilidad_poderes = 0.2
         self.juego_terminado = False
         
         if self.tipo_juego == 'TETRIS':
@@ -28,6 +28,9 @@ class Juego:
             self.pieza_x, self.pieza_y, self.pieza_rotacion = 0, 0, 0
             self.velocidad_gravedad = 0.4
             self.poderes_tetris = []
+            self.probabilidad_espejo = 0.3
+            self.modo_espejo = False
+            self.tiempo_fin_espejo = 0.0
         
         if self.tipo_juego == 'SNAKE':
             self.serpiente_cuerpo = []
@@ -43,6 +46,12 @@ class Juego:
         while not self.juego_terminado:
             delta_tiempo = time.time() - tiempo_anterior
             tiempo_anterior = time.time()
+            # Lógica de temporizador para el Modo Espejo
+            tiempo_actual = time.time()
+            if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
+                self.modo_espejo = False
+                self.tiempo_fin_espejo = 0.0
+
             self.manejar_input()
             self.timer_gravedad += delta_tiempo
             if self.timer_gravedad > self.velocidad_gravedad:
@@ -57,12 +66,20 @@ class Juego:
             key = msvcrt.getch()
             
             if self.tipo_juego == 'TETRIS':
-                if key == 'w': self.ejecutar_evento('ON_KEY_UP')
-                elif key == 's': self.ejecutar_evento('ON_KEY_DOWN')
-                elif key == 'a': self.ejecutar_evento('ON_KEY_LEFT')
-                elif key == 'd': self.ejecutar_evento('ON_KEY_RIGHT')
-                elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
-                elif key == 'k': self.ejecutar_evento('ON_BOMB')
+                if not self.modo_espejo:
+                    if key == 'w': self.ejecutar_evento('ON_KEY_UP')
+                    elif key == 's': self.ejecutar_evento('ON_KEY_DOWN')
+                    elif key == 'a': self.ejecutar_evento('ON_KEY_LEFT')
+                    elif key == 'd': self.ejecutar_evento('ON_KEY_RIGHT')
+                    elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
+                    elif key == 'k': self.ejecutar_evento('ON_BOMB')
+                else:
+                    if key == 'w': self.ejecutar_evento('ON_KEY_DOWN')
+                    elif key == 's': self.ejecutar_evento('ON_KEY_UP')
+                    elif key == 'a': self.ejecutar_evento('ON_KEY_RIGHT')
+                    elif key == 'd': self.ejecutar_evento('ON_KEY_LEFT')
+                    elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
+                    elif key == 'k': self.ejecutar_evento('ON_BOMB')
             elif self.tipo_juego == 'SNAKE':
                 if key == 'w': self.snake_cambiar_direccion('UP')
                 elif key == 's': self.snake_cambiar_direccion('DOWN')
@@ -70,6 +87,7 @@ class Juego:
                 elif key == 'd': self.snake_cambiar_direccion('RIGHT')
             if key == 'q':
                 self.juego_terminado = True
+
 
     def dibujar(self):
         os.system('cls')
@@ -121,6 +139,10 @@ class Juego:
                             if y == 9: linea += "      BOMBA(K)"
                 else:
                     if y == 9: linea += "     No tienes poderes disponibles"
+                if self.modo_espejo:
+                    tiempo_restante = max(0, self.tiempo_fin_espejo - time.time())
+                    tiempo_str = "{:.1f}".format(tiempo_restante)
+                    if y == 15: linea += "    Modo espejo: INVERTIDO ({0}s)".format(tiempo_str)
             
             buffer_pantalla.append(linea)
         buffer_pantalla.append("#" * (self.ancho * 2 + 4))
@@ -201,6 +223,7 @@ class Juego:
             self.grid = [[0] * self.ancho for _ in range(lineas_limpias)] + nuevo_grid
             for _ in range(lineas_limpias): self.ejecutar_evento('ON_LINE_CLEAR')
             self.generar_poderes_tetris()
+            self.modo_espejo_tetris()
 
     def tetris_tsunami(self):
         if "tsunami" in self.poderes_tetris:
@@ -277,7 +300,14 @@ class Juego:
 
                 # Generar una nueva pieza para reanudar el juego 
                 self.ejecutar_evento('ON_START')
-         
+
+    def modo_espejo_tetris(self):
+        if not self.modo_espejo:
+            if random.random() < self.probabilidad_espejo:
+                self.modo_espejo = True
+                #Establecemos el tiempo de finalización
+                self.tiempo_fin_espejo = time.time() + 10.0
+
     def generar_poderes_tetris(self):
         if len(self.poderes_tetris) < 2:
             if random.random() < self.probabilidad_poderes:
