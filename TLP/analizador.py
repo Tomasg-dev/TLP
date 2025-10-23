@@ -302,17 +302,7 @@ def transform_ast(symbol_table):
         ast_runtime['events']['ON_TSUNAMI'] = [{'accion': 'DESTROY_ROW','objeto': 2, 'params': []}]
         
         # Mapeo de Regla Bomba
-        if 'regla_bomba' in symbol_table:
-            regla_b = symbol_table['regla_bomba']
-            ast_runtime['events']['ON_BOMB'] = [{
-                'accion': 'EXPLODE',
-                'objeto': None,
-                'params': [regla_b.get('radio', 1)]
-            }]
-        
-        # ... (El compilador ignora los controles específicos 't' y 'k',
-        #     ya que el Runtime los tiene codificados para disparar los eventos
-        #     ON_TSUNAMI y ON_BOMB condicionalmente) ...
+        ast_runtime['events']['ON_BOMB'] = [{'accion': 'EXPLODE','objeto': None,'params': []}]
 
     # ----------------------------------------------------------------------
     

@@ -420,9 +420,7 @@
     "events": {
         "ON_BOMB": [
             {
-                "params": [
-                    3
-                ], 
+                "params": [], 
                 "accion": "EXPLODE", 
                 "objeto": null
             }

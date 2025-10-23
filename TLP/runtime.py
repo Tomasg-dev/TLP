@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # runtime.py
 # Motor de juego para BrickScript (Version Final y Depurada)
 # Uso: python runtime.py <archivo_juego.json>
@@ -60,6 +62,7 @@ class Juego:
                 elif key == 'a': self.ejecutar_evento('ON_KEY_LEFT')
                 elif key == 'd': self.ejecutar_evento('ON_KEY_RIGHT')
                 elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
+                elif key == 'k': self.ejecutar_evento('ON_BOMB')
             elif self.tipo_juego == 'SNAKE':
                 if key == 'w': self.snake_cambiar_direccion('UP')
                 elif key == 's': self.snake_cambiar_direccion('DOWN')
@@ -136,6 +139,7 @@ class Juego:
                     if verbo == 'MOVE': self.tetris_mover_pieza(accion['params'][0])
                     if verbo == 'ROTATE': self.tetris_rotar_pieza()
                     if verbo == 'DESTROY_ROW': self.tetris_tsunami()
+                    if verbo == 'EXPLODE': self.tetris_bomba()
                 
                 if self.tipo_juego == 'SNAKE':
                     if verbo == 'SPAWN' and objeto == 'PLAYER': self.snake_spawn_jugador(accion)
@@ -205,9 +209,74 @@ class Juego:
             for _ in range(2): self.ejecutar_evento('ON_LINE_CLEAR')   
             self.poderes_tetris.remove("tsunami")
 
+#Método usado para el poder de Bomba
+    def tetris_aplicar_gravedad_a_matriz(self, fila_inicio):
+            """
+            Aplica la gravedad a las celdas de la matriz. 
+            Revisa columna por columna desde abajo para hacer caer los bloques.
+            """
+            # Itera sobre cada columna
+            for x in range(self.ancho):
+                # Mantener una lista de bloques (no vacíos) en la columna
+                columna_bloques = []
+                
+                # Recorre la columna de abajo hacia arriba para recolectar los bloques
+                # Solo recogemos los que son bloques fijos (celda == 1)
+                for y in range(self.alto):
+                    if self.grid[y][x] == 1:
+                        columna_bloques.append(1)
+                
+                # Recorre la columna de abajo hacia arriba para re-dibujar los bloques
+                # La gravedad los obliga a empezar desde el fondo.
+                for y in range(self.alto):
+                    
+                    # Calcular la posición desde el fondo: 
+                    # (self.alto - 1) es la última fila (fondo)
+                    # k es el índice del bloque en la lista de bloques_fijos (0 es el más bajo)
+                    indice_desde_fondo = self.alto - 1 - y
+                    
+                    if indice_desde_fondo < len(columna_bloques):
+                        # Si todavía hay bloques para dibujar en esta columna
+                        self.grid[y][x] = 1 
+                    else:
+                        # Si ya no hay más bloques, la celda está vacía
+                        self.grid[y][x] = 0
+
+            # Al final, limpiamos las líneas completas que pudieran haberse formado al caer
+            self.tetris_limpiar_lineas()
+
     def tetris_bomba(self):
-        if "bomba" in self.poderes_tetris:
-            return
+            
+            if "bomba" in self.poderes_tetris:
+                # Eliminar la pieza actual, si existe
+                self.pieza_actual = None 
+                # Coordenadas de la esquina superior izquierda del área 5x5 a explotar
+                
+                # Centro del ancho: self.ancho // 2
+                # El -2 es para centrar el bloque 5x5 en el ancho
+                x_bomba_inicio = self.ancho // 2 - 2
+                y_bomba_inicio = self.alto - 5
+                
+                for y_offset in range(5): # Iterar 5 filas
+                    for x_offset in range(5): # Iterar 5 columnas
+                        # Calcular la posición absoluta en la cuadrícula
+                        current_y = y_bomba_inicio + y_offset
+                        current_x = x_bomba_inicio + x_offset
+                        
+                        # Verificar límites para evitar errores (especialmente si x_bomba_inicio o y_bomba_inicio ajustaron)
+                        if 0 <= current_y < self.alto and 0 <= current_x < self.ancho:
+                            self.grid[current_y][current_x] = 0 # Limpia la celda
+                
+                # Aplicar gravedad a las piezas por encima del área limpiada
+                self.tetris_aplicar_gravedad_a_matriz(y_bomba_inicio)
+                
+                # La limpieza de líneas post-gravedad la maneja 'tetris_aplicar_gravedad_a_matriz'
+                
+                # Eliminar el poder de la lista
+                self.poderes_tetris.remove("bomba")
+
+                # Generar una nueva pieza para reanudar el juego 
+                self.ejecutar_evento('ON_START')
          
     def generar_poderes_tetris(self):
         if len(self.poderes_tetris) < 2:
