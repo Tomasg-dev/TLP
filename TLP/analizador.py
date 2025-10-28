@@ -354,10 +354,17 @@ def transform_ast(symbol_table):
                 # Al comer, la serpiente crece y se genera nueva comida
                 ast_runtime['events']['ON_EAT_FOOD'].append({'accion': 'GROW', 'objeto': 'PLAYER', 'params': []})
                 ast_runtime['events']['ON_EAT_FOOD'].append({'accion': 'SPAWN', 'objeto': 'FOOD', 'params': []})
-                
+            
                 # Aumentar puntuación
                 puntos = regla_c.get('puntos', 1)
                 ast_runtime['events']['ON_EAT_FOOD'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
+
+                # Fruta Borojo
+            ast_runtime['events']['ON_ESPEJO'].append({'accion': 'CHANGE_KEYBINDS', 'objeto': 'PLAYER', 'params': []}) #Se activa el modo espejo
+            ast_runtime['events']['ON_ESPEJO'].append({'accion': 'SPAWN', 'objeto': 'FOOD', 'params': []}) # Genera otra fruta
+                
+            # puntos = regla_c.get('puntos', 1)
+            # ast_runtime['events']['ON_ESPEJO'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []}) #Aumenta la puntuación
                 
         pass 
         

@@ -20,23 +20,24 @@ class Juego:
         self.alto = config.get('grid_size', [10, 20])[1]
         self.grid = [[0 for _ in range(self.ancho)] for _ in range(self.alto)]
         self.puntuacion = 0
-        self.probabilidad_poderes = 0.2
+        self.probabilidad_poderes = 0.5
         self.juego_terminado = False
+        self.modo_espejo = False
+        self.tiempo_fin_espejo = 0.0
+        self.probabilidad_espejo = 0.5
         
         if self.tipo_juego == 'TETRIS':
             self.pieza_actual = None
             self.pieza_x, self.pieza_y, self.pieza_rotacion = 0, 0, 0
             self.velocidad_gravedad = 0.4
             self.poderes_tetris = []
-            self.probabilidad_espejo = 0.3
-            self.modo_espejo = False
-            self.tiempo_fin_espejo = 0.0
         
         if self.tipo_juego == 'SNAKE':
             self.serpiente_cuerpo = []
             self.serpiente_direccion = (1, 0)
             self.posicion_comida = None
             self.velocidad_gravedad = 0.15
+            self.fruta_actual = "@@" 
         
         self.timer_gravedad = 0
         self.ejecutar_evento('ON_START')
@@ -47,10 +48,11 @@ class Juego:
             delta_tiempo = time.time() - tiempo_anterior
             tiempo_anterior = time.time()
             # Lógica de temporizador para el Modo Espejo
-            tiempo_actual = time.time()
-            if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
-                self.modo_espejo = False
-                self.tiempo_fin_espejo = 0.0
+            if self.tipo_juego == "TETRIS":
+                tiempo_actual = time.time()
+                if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
+                    self.modo_espejo = False
+                    self.tiempo_fin_espejo = 0.0
 
             self.manejar_input()
             self.timer_gravedad += delta_tiempo
@@ -81,10 +83,17 @@ class Juego:
                     elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
                     elif key == 'k': self.ejecutar_evento('ON_BOMB')
             elif self.tipo_juego == 'SNAKE':
-                if key == 'w': self.snake_cambiar_direccion('UP')
-                elif key == 's': self.snake_cambiar_direccion('DOWN')
-                elif key == 'a': self.snake_cambiar_direccion('LEFT')
-                elif key == 'd': self.snake_cambiar_direccion('RIGHT')
+                if not self.modo_espejo:
+                    if key == 'w': self.snake_cambiar_direccion('UP')
+                    elif key == 's': self.snake_cambiar_direccion('DOWN')
+                    elif key == 'a': self.snake_cambiar_direccion('LEFT')
+                    elif key == 'd': self.snake_cambiar_direccion('RIGHT')
+                else:
+                    if key == 'w': self.snake_cambiar_direccion('DOWN')
+                    elif key == 's': self.snake_cambiar_direccion('UP')
+                    elif key == 'a': self.snake_cambiar_direccion('RIGHT')
+                    elif key == 'd': self.snake_cambiar_direccion('LEFT')
+
             if key == 'q':
                 self.juego_terminado = True
 
@@ -120,15 +129,21 @@ class Juego:
                 elif celda == 1: linea += "[]"
                 elif celda == 2: linea += "[]"
                 elif celda == 3: linea += "OO"
-                elif celda == 4: linea += "@@"
+                elif celda == 4: linea += self.fruta_actual
             linea += " #"
             if y == 2: linea += "    PUNTUACION: " + str(self.puntuacion)
             if y == 4: linea += "    CONTROLES:"
             if y == 5: linea += "     WASD"
             if y == 6: linea += "     'q': Salir"
-            if y == 8: linea += "    PODERES:"
+            if self.tipo_juego == "SNAKE":
+                if y == 8: linea += "      GUIA DE FRUTAS:"
+                if y == 9: linea += "      @@: Manzana"
+                if y == 10: linea += "      ??: Borojo"
+                if y == 11: linea += "      &&: Chontaduro"
+                if y == 12: linea += "      !!: Fruta Venenosa"
             if self.tipo_juego == "TETRIS":
                 if len(self.poderes_tetris) != 0:
+                    if y == 8: linea += "    PODERES:"
                     if len(self.poderes_tetris) == 2:
                         if y == 9: linea += "     TSUNAMI(T)"
                         if y == 10: linea += "      BOMBA(K)"
@@ -139,10 +154,10 @@ class Juego:
                             if y == 9: linea += "      BOMBA(K)"
                 else:
                     if y == 9: linea += "     No tienes poderes disponibles"
-                if self.modo_espejo:
-                    tiempo_restante = max(0, self.tiempo_fin_espejo - time.time())
-                    tiempo_str = "{:.1f}".format(tiempo_restante)
-                    if y == 15: linea += "    Modo espejo: INVERTIDO ({0}s)".format(tiempo_str)
+            if self.modo_espejo:
+                tiempo_restante = max(0, self.tiempo_fin_espejo - time.time())
+                tiempo_str = "{:.1f}".format(tiempo_restante)
+                if y == 15: linea += "    Modo espejo: INVERTIDO ({0}s)".format(tiempo_str)
             
             buffer_pantalla.append(linea)
         buffer_pantalla.append("#" * (self.ancho * 2 + 4))
@@ -167,7 +182,7 @@ class Juego:
                     if verbo == 'SPAWN' and objeto == 'PLAYER': self.snake_spawn_jugador(accion)
                     if verbo == 'SPAWN' and objeto == 'FOOD': self.snake_spawn_comida()
                     if verbo == 'MOVE' and objeto == 'PLAYER': self.snake_mover_jugador()
-                    if verbo == 'GROW': self.snake_crecer()
+                    if verbo == 'GROW' and objeto == 'PLAYER': self.snake_crecer()
 
     def tetris_spawn_pieza(self):
         nombre_pieza = random.choice(self.datos_juego['shapes'].keys())
@@ -223,8 +238,7 @@ class Juego:
             self.grid = [[0] * self.ancho for _ in range(lineas_limpias)] + nuevo_grid
             for _ in range(lineas_limpias): self.ejecutar_evento('ON_LINE_CLEAR')
             self.generar_poderes_tetris()
-            self.modo_espejo_tetris()
-
+            self.funcion_modo_espejo()
     def tetris_tsunami(self):
         if "tsunami" in self.poderes_tetris:
             nuevo_grid = [fila for fila in self.grid[:-2]]
@@ -301,9 +315,14 @@ class Juego:
                 # Generar una nueva pieza para reanudar el juego 
                 self.ejecutar_evento('ON_START')
 
-    def modo_espejo_tetris(self):
+    def funcion_modo_espejo(self):
         if not self.modo_espejo:
-            if random.random() < self.probabilidad_espejo:
+            if self.tipo_juego == "Tetris":
+                if random.random() < self.probabilidad_espejo:
+                    self.modo_espejo = True
+                    #Establecemos el tiempo de finalización
+                    self.tiempo_fin_espejo = time.time() + 10.0
+            else:
                 self.modo_espejo = True
                 #Establecemos el tiempo de finalización
                 self.tiempo_fin_espejo = time.time() + 10.0
@@ -330,6 +349,10 @@ class Juego:
         while True:
             x, y = random.randint(0, self.ancho - 1), random.randint(0, self.alto - 1)
             if (x, y) not in self.serpiente_cuerpo:
+                # frutas_disponibles = ["@@", "??", "&&", "!!"]
+                frutas_disponibles = ["@@", "??"] #@@ = manzana, ?? = borojo, && = chontaduro, !! = fruta venenosa
+                fruta_aleatoria = random.randint(0, 1)
+                self.fruta_actual = frutas_disponibles[fruta_aleatoria]
                 self.posicion_comida = (x, y)
                 break
                 
@@ -349,10 +372,18 @@ class Juego:
 
         self.serpiente_cuerpo.insert(0, nueva_cabeza)
         
-        if nueva_cabeza == self.posicion_comida:
+        if nueva_cabeza == self.posicion_comida and self.fruta_actual == "@@":
             self.ejecutar_evento('ON_EAT_FOOD')
         else:
             self.serpiente_cuerpo.pop()
+        if nueva_cabeza == self.posicion_comida and self.fruta_actual == "??":
+            self.ejecutar_evento('ON_ESPEJO')
+            self.funcion_modo_espejo()
+        # elif nueva_cabeza == self.posicion_comida and self.fruta_actual == "&&":
+        #     pass
+        # elif nueva_cabeza == self.posicion_comida and self.fruta_actual == "!!":
+        #     pass
+    
 
     def snake_cambiar_direccion(self, direccion):
         if direccion == 'UP' and self.serpiente_direccion[1] != 1:
