@@ -32,11 +32,18 @@
                 "objeto": "PLAYER"
             }
         ], 
-        "ON_COLLISION_SELF": [
+        "ON_EAT_VENOM": [
+            {
+                "params": [
+                    -3
+                ], 
+                "accion": "SHRINK", 
+                "objeto": "PLAYER"
+            }, 
             {
                 "params": [], 
-                "accion": "GAME_OVER", 
-                "objeto": null
+                "accion": "INCREASE_SCORE", 
+                "objeto": -1
             }
         ], 
         "ON_TSUNAMI": [], 
@@ -59,27 +66,38 @@
         ], 
         "ON_KEY_RIGHT": [], 
         "ON_KEY_LEFT": [], 
-        "ON_KEY_DOWN": [], 
-        "ON_ESPEJO": [
+        "ON_EAT_SLOW": [
             {
-                "params": [], 
-                "accion": "GROW", 
+                "params": [
+                    "SLOW"
+                ], 
+                "accion": "CHANGE_SPEED", 
                 "objeto": "PLAYER"
             }, 
             {
                 "params": [], 
-                "accion": "SPAWN", 
-                "objeto": "FOOD"
+                "accion": "INCREASE_SCORE", 
+                "objeto": 2
+            }
+        ], 
+        "ON_KEY_DOWN": [], 
+        "ON_COLLISION_SELF": [
+            {
+                "params": [], 
+                "accion": "GAME_OVER", 
+                "objeto": null
+            }
+        ], 
+        "ON_ESPEJO": [
+            {
+                "params": [], 
+                "accion": "CHANGE_KEYBINDS", 
+                "objeto": "PLAYER"
             }, 
             {
                 "params": [], 
                 "accion": "INCREASE_SCORE", 
                 "objeto": 1
-            }, 
-            {
-                "params": [], 
-                "accion": "CHANGE_KEYBINDS", 
-                "objeto": "PLAYER"
             }
         ], 
         "ON_COLLISION_WALL": [

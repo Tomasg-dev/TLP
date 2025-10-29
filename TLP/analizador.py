@@ -228,8 +228,10 @@ def transform_ast(symbol_table):
             "ON_LINE_CLEAR": [],
             "ON_TSUNAMI": [],
             # Eventos específicos de Snake
-            "ON_EAT_FOOD": [],
-            "ON_ESPEJO": [],
+            "ON_EAT_FOOD": [], # Manzana
+            "ON_ESPEJO": [], # Borojo
+            "ON_EAT_SLOW": [], # Chontaduro
+            "ON_EAT_VENOM": [], # Fruta venenosa
             "ON_COLLISION_WALL": [],
             "ON_COLLISION_SELF": [],
             # Eventos de teclado (compartidos, pero las acciones varían)
@@ -247,13 +249,7 @@ def transform_ast(symbol_table):
         ast_runtime['config']['grid_size'] = symbol_table['tablero']
 
     # 2. TRANSFORMACIÓN ESPECÍFICA POR TIPO DE JUEGO
-    # ----------------------------------------------------------------------
-    
     if game_type == 'TETRIS':
-        # **********************************************
-        # 2A. Lógica para TETRIS (Reutiliza tu mapeo anterior)
-        # **********************************************
-        
         # Mapeo de Figuras (SHAPES)
         for key, value in symbol_table.items():
             if key.startswith('figura_') and isinstance(value, dict):
@@ -308,12 +304,6 @@ def transform_ast(symbol_table):
     # ----------------------------------------------------------------------
     
     elif game_type == 'SNAKE':
-        # **********************************************
-        # 2B. Lógica para SNAKE (Nuevo mapeo)
-        # **********************************************
-        
-        # Mapeo de Componentes Iniciales (ON START)
-        # Inicializar Jugador (Serpiente) y la primera Comida
         
         cobra = symbol_table.get('la_cobra', {})
         initial_coords = cobra.get('cuerpo', [[10, 10]])[0] # Usa la cabeza como coordenada inicial de spawn
@@ -360,18 +350,32 @@ def transform_ast(symbol_table):
                 puntos = regla_c.get('puntos', 1)
                 ast_runtime['events']['ON_EAT_FOOD'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
 
-
+        # Regla del modo espejo (Fruta Borojo)
         if 'regla_modo_espejo' in symbol_table:
             regla_esp = symbol_table['regla_modo_espejo']
-            # Fruta Borojo  
+
             if regla_esp.get('evento') == 'powerup_espejo':
-                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'GROW', 'objeto': 'PLAYER', 'params': []})
-                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'SPAWN', 'objeto': 'FOOD', 'params': []}) # Genera otra fruta
+                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'CHANGE_KEYBINDS', 'objeto': 'PLAYER', 'params': []}) #Se activa el modo espejo
 
                 puntos = regla_c.get('puntos', 1)
                 ast_runtime['events']['ON_ESPEJO'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
-                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'CHANGE_KEYBINDS', 'objeto': 'PLAYER', 'params': []}) #Se activa el modo espejo
-          
+        
+        # Regla de la fruta venenosa (Decrecimiento)
+        if 'regla_decrecimiento' in symbol_table:
+            regla_decrecimiento = symbol_table['regla_decrecimiento']
+
+            if regla_decrecimiento.get('evento') == 'decrecimiento_serpiente': 
+                ast_runtime['events']['ON_EAT_VENOM'].append({'accion': 'SHRINK', 'objeto': 'PLAYER', 'params': [regla_decrecimiento.get('crecimiento')]})
+                puntos = regla_decrecimiento.get('puntos', 0)
+                ast_runtime['events']['ON_EAT_VENOM'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
+
+        # Regla de la fruta Chontaduro (Ralentizar)
+        if 'regla_ralentizar' in symbol_table:
+            regla_ralentizar = symbol_table['regla_ralentizar']
+            if regla_ralentizar.get('evento') == 'ralentizar':
+                ast_runtime['events']['ON_EAT_SLOW'].append({'accion': 'CHANGE_SPEED', 'objeto': 'PLAYER', 'params': ['SLOW']})
+                puntos = regla_ralentizar.get('puntos', 2)
+                ast_runtime['events']['ON_EAT_SLOW'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
 
     return ast_runtime
 

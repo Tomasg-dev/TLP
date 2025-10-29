@@ -36,8 +36,11 @@ class Juego:
             self.serpiente_cuerpo = []
             self.serpiente_direccion = (1, 0)
             self.posicion_comida = None
-            self.velocidad_gravedad = 0.15
+            self.velocidad_base_snake = 0.15
+            self.velocidad_gravedad = self.velocidad_base_snake
             self.fruta_actual = "@@" 
+            self.modo_lento = False
+            self.tiempo_fin_lento = 0.0
         
         self.timer_gravedad = 0
         self.ejecutar_evento('ON_START')
@@ -48,12 +51,17 @@ class Juego:
             delta_tiempo = time.time() - tiempo_anterior
             tiempo_anterior = time.time()
             # Lógica de temporizador para el Modo Espejo
-            if self.tipo_juego == "TETRIS":
+            tiempo_actual = time.time()
+            if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
+                self.modo_espejo = False
+                self.tiempo_fin_espejo = 0.0
+            # Lógica de temporizador para el Modo Lento
+            if self.tipo_juego == "SNAKE":
                 tiempo_actual = time.time()
-                if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
-                    self.modo_espejo = False
-                    self.tiempo_fin_espejo = 0.0
-
+                if self.modo_lento and tiempo_actual >= self.tiempo_fin_lento:
+                    self.modo_lento = False
+                    self.tiempo_fin_lento = 0.0
+                    self.velocidad_gravedad = self.velocidad_base_snake # Restauramos la velocidad original de la serpiente
             self.manejar_input()
             self.timer_gravedad += delta_tiempo
             if self.timer_gravedad > self.velocidad_gravedad:
@@ -157,8 +165,12 @@ class Juego:
             if self.modo_espejo:
                 tiempo_restante = max(0, self.tiempo_fin_espejo - time.time())
                 tiempo_str = "{:.1f}".format(tiempo_restante)
-                if y == 15: linea += "    Modo espejo: INVERTIDO ({0}s)".format(tiempo_str)
-            
+                if y == 15: linea += "      Modo espejo: INVERTIDO ({0}s)".format(tiempo_str)
+            if self.tipo_juego == "SNAKE":
+                if self.modo_lento:
+                    tiempo_restante = max(0, self.tiempo_fin_lento - time.time())
+                    tiempo_str = "{:.1f}".format(tiempo_restante)
+                    if y == 16: linea += "      Modo lento: ACTIVO ({0}s)".format(tiempo_str)
             buffer_pantalla.append(linea)
         buffer_pantalla.append("#" * (self.ancho * 2 + 4))
         print ("\n".join(buffer_pantalla))
@@ -183,6 +195,7 @@ class Juego:
                     if verbo == 'SPAWN' and objeto == 'FOOD': self.snake_spawn_comida()
                     if verbo == 'MOVE' and objeto == 'PLAYER': self.snake_mover_jugador()
                     if verbo == 'GROW' and objeto == 'PLAYER': self.snake_crecer()
+                    if verbo == 'SHRINK' and objeto == 'PLAYER': self.snake_encoger()
 
     def tetris_spawn_pieza(self):
         nombre_pieza = random.choice(self.datos_juego['shapes'].keys())
@@ -239,6 +252,7 @@ class Juego:
             for _ in range(lineas_limpias): self.ejecutar_evento('ON_LINE_CLEAR')
             self.generar_poderes_tetris()
             self.funcion_modo_espejo()
+    
     def tetris_tsunami(self):
         if "tsunami" in self.poderes_tetris:
             nuevo_grid = [fila for fila in self.grid[:-2]]
@@ -287,8 +301,6 @@ class Juego:
             if "bomba" in self.poderes_tetris:
                 # Eliminar la pieza actual, si existe
                 self.pieza_actual = None 
-                # Coordenadas de la esquina superior izquierda del área 5x5 a explotar
-                
                 # Centro del ancho: self.ancho // 2
                 # El -2 es para centrar el bloque 5x5 en el ancho
                 x_bomba_inicio = self.ancho // 2 - 2
@@ -306,8 +318,6 @@ class Juego:
                 
                 # Aplicar gravedad a las piezas por encima del área limpiada
                 self.tetris_aplicar_gravedad_a_matriz(y_bomba_inicio)
-                
-                # La limpieza de líneas post-gravedad la maneja 'tetris_aplicar_gravedad_a_matriz'
                 
                 # Eliminar el poder de la lista
                 self.poderes_tetris.remove("bomba")
@@ -349,13 +359,12 @@ class Juego:
         while True:
             x, y = random.randint(0, self.ancho - 1), random.randint(0, self.alto - 1)
             if (x, y) not in self.serpiente_cuerpo:
-                # frutas_disponibles = ["@@", "??", "&&", "!!"]
-                frutas_disponibles = ["@@", "??"] #@@ = manzana, ?? = borojo, && = chontaduro, !! = fruta venenosa
-                fruta_aleatoria = random.randint(0, 1)
-                self.fruta_actual = frutas_disponibles[fruta_aleatoria]
+                frutas_disponibles = ["@@", "??", "&&", "!!"] #@@ = manzana, ?? = borojo, && = chontaduro, !! = fruta venenosa
+                fruta_aleatoria = random.choice(frutas_disponibles)
+                self.fruta_actual = fruta_aleatoria
                 self.posicion_comida = (x, y)
                 break
-                
+    
     def snake_mover_jugador(self):
         if not self.serpiente_cuerpo: return
         cabeza_x, cabeza_y = self.serpiente_cuerpo[0]
@@ -372,15 +381,24 @@ class Juego:
 
         self.serpiente_cuerpo.insert(0, nueva_cabeza)
         
-        if nueva_cabeza == self.posicion_comida and self.fruta_actual == "@@":
-            self.ejecutar_evento('ON_EAT_FOOD')
-        if nueva_cabeza == self.posicion_comida and self.fruta_actual == "??":
-            self.ejecutar_evento('ON_ESPEJO')
-            self.funcion_modo_espejo()
-        # elif nueva_cabeza == self.posicion_comida and self.fruta_actual == "&&":
-        #     pass
-        # elif nueva_cabeza == self.posicion_comida and self.fruta_actual == "!!":
-        #     pass
+        if nueva_cabeza == self.posicion_comida:
+            if self.fruta_actual == "@@": # Fruta manzana
+                self.ejecutar_evento('ON_EAT_FOOD')
+            
+            elif self.fruta_actual == "??": # Borojo
+                self.funcion_modo_espejo()
+                self.ejecutar_evento('ON_EAT_FOOD') # Hacemos aparecer nuevamente una fruta y aumentamos el tamaño de la serpiente
+            
+            elif self.fruta_actual == "&&": # Chontaduro
+                self.modo_lento = True
+                self.velocidad_gravedad = 0.30 # Lo hacemos más lento
+                self.tiempo_fin_lento = time.time() + 10.0
+                self.ejecutar_evento('ON_EAT_FOOD') # Hacemos aparecer nuevamente una fruta y aumentamos el tamaño de la serpiente
+
+            elif self.fruta_actual == "!!":
+                self.ejecutar_evento('ON_EAT_VENOM')
+                self.ejecutar_evento('ON_EAT_FOOD') # Hacemos aparecer nuevamente una fruta
+                self.serpiente_cuerpo.pop() # Borramos el crecimiento de la serpiente
         else:
             self.serpiente_cuerpo.pop()
 
@@ -396,6 +414,12 @@ class Juego:
 
     def snake_crecer(self):
         pass
+
+    def snake_encoger(self):
+        if len(self.serpiente_cuerpo) > 4:
+            self.serpiente_cuerpo.pop()
+        else:
+            pass # No hace nada si la serpiente está en su estado inicial
 
     def mostrar_game_over(self):
         os.system('cls')

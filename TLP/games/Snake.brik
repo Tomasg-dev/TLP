@@ -60,7 +60,7 @@ class fruta_chontaduro = {
 
 class fruta_venenosa = {
     str color = "#63107D" //Morado//
-    str evento = "decrecimiento"
+    str evento = "decrecimiento_serpiente"
     
 }
 
@@ -135,7 +135,7 @@ class regla_ralentizar = {
 class regla_decrecimiento = {
     str evento = "decrecimiento_serpiente"
     str accion = "disminuir_cola"
-    int puntos = -5
+    int puntos = -1
     int crecimiento = -3
     int duracion = 0
     int factor_velocidad = 1
