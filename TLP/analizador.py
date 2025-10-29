@@ -229,6 +229,7 @@ def transform_ast(symbol_table):
             "ON_TSUNAMI": [],
             # Eventos específicos de Snake
             "ON_EAT_FOOD": [],
+            "ON_ESPEJO": [],
             "ON_COLLISION_WALL": [],
             "ON_COLLISION_SELF": [],
             # Eventos de teclado (compartidos, pero las acciones varían)
@@ -359,20 +360,24 @@ def transform_ast(symbol_table):
                 puntos = regla_c.get('puntos', 1)
                 ast_runtime['events']['ON_EAT_FOOD'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
 
-                # Fruta Borojo
-            ast_runtime['events']['ON_ESPEJO'].append({'accion': 'CHANGE_KEYBINDS', 'objeto': 'PLAYER', 'params': []}) #Se activa el modo espejo
-            ast_runtime['events']['ON_ESPEJO'].append({'accion': 'SPAWN', 'objeto': 'FOOD', 'params': []}) # Genera otra fruta
-                
-            # puntos = regla_c.get('puntos', 1)
-            # ast_runtime['events']['ON_ESPEJO'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []}) #Aumenta la puntuación
-                
-        pass 
-        
+
+        if 'regla_modo_espejo' in symbol_table:
+            regla_esp = symbol_table['regla_modo_espejo']
+            # Fruta Borojo  
+            if regla_esp.get('evento') == 'powerup_espejo':
+                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'GROW', 'objeto': 'PLAYER', 'params': []})
+                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'SPAWN', 'objeto': 'FOOD', 'params': []}) # Genera otra fruta
+
+                puntos = regla_c.get('puntos', 1)
+                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'INCREASE_SCORE', 'objeto': puntos, 'params': []})
+                ast_runtime['events']['ON_ESPEJO'].append({'accion': 'CHANGE_KEYBINDS', 'objeto': 'PLAYER', 'params': []}) #Se activa el modo espejo
+          
+
     return ast_runtime
 
 # --- Zona de ejecucion ---
 # 1. Especifica la ruta del archivo a procesar
-file_path = "games\Tetris.brik"
+file_path = "games\Snake.brik"
 ast_file_path = file_path.replace('.brik', '.json')
 
 # 2. Carga el contenido del archivo

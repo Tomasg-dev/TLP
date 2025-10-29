@@ -477,6 +477,7 @@
                 "objeto": "CURRENT_PIECE"
             }
         ], 
+        "ON_ESPEJO": [], 
         "ON_COLLISION_WALL": [], 
         "ON_LINE_CLEAR": [
             {

@@ -374,8 +374,6 @@ class Juego:
         
         if nueva_cabeza == self.posicion_comida and self.fruta_actual == "@@":
             self.ejecutar_evento('ON_EAT_FOOD')
-        else:
-            self.serpiente_cuerpo.pop()
         if nueva_cabeza == self.posicion_comida and self.fruta_actual == "??":
             self.ejecutar_evento('ON_ESPEJO')
             self.funcion_modo_espejo()
@@ -383,7 +381,8 @@ class Juego:
         #     pass
         # elif nueva_cabeza == self.posicion_comida and self.fruta_actual == "!!":
         #     pass
-    
+        else:
+            self.serpiente_cuerpo.pop()
 
     def snake_cambiar_direccion(self, direccion):
         if direccion == 'UP' and self.serpiente_direccion[1] != 1:

@@ -8,39 +8,6 @@
         ]
     }, 
     "events": {
-        "ON_COLLISION_WALL": [
-            {
-                "params": [], 
-                "accion": "GAME_OVER", 
-                "objeto": null
-            }
-        ], 
-        "ON_COLLISION_SELF": [
-            {
-                "params": [], 
-                "accion": "GAME_OVER", 
-                "objeto": null
-            }
-        ], 
-        "ON_LINE_CLEAR": [], 
-        "ON_KEY_DOWN": [], 
-        "ON_START": [
-            {
-                "params": [
-                    [
-                        5, 
-                        10
-                    ]
-                ], 
-                "accion": "SPAWN", 
-                "objeto": "PLAYER"
-            }, 
-            {
-                "params": [], 
-                "accion": "SPAWN", 
-                "objeto": "FOOD"
-            }
-        ], 
         "ON_EAT_FOOD": [
             {
                 "params": [], 
@@ -58,7 +25,6 @@
                 "objeto": 1
             }
         ], 
-        "ON_KEY_RIGHT": [], 
         "ON_TICK": [
             {
                 "params": [], 
@@ -66,7 +32,64 @@
                 "objeto": "PLAYER"
             }
         ], 
-        "ON_KEY_UP": [], 
-        "ON_KEY_LEFT": []
+        "ON_COLLISION_SELF": [
+            {
+                "params": [], 
+                "accion": "GAME_OVER", 
+                "objeto": null
+            }
+        ], 
+        "ON_TSUNAMI": [], 
+        "ON_START": [
+            {
+                "params": [
+                    [
+                        5, 
+                        10
+                    ]
+                ], 
+                "accion": "SPAWN", 
+                "objeto": "PLAYER"
+            }, 
+            {
+                "params": [], 
+                "accion": "SPAWN", 
+                "objeto": "FOOD"
+            }
+        ], 
+        "ON_KEY_RIGHT": [], 
+        "ON_KEY_LEFT": [], 
+        "ON_KEY_DOWN": [], 
+        "ON_ESPEJO": [
+            {
+                "params": [], 
+                "accion": "GROW", 
+                "objeto": "PLAYER"
+            }, 
+            {
+                "params": [], 
+                "accion": "SPAWN", 
+                "objeto": "FOOD"
+            }, 
+            {
+                "params": [], 
+                "accion": "INCREASE_SCORE", 
+                "objeto": 1
+            }, 
+            {
+                "params": [], 
+                "accion": "CHANGE_KEYBINDS", 
+                "objeto": "PLAYER"
+            }
+        ], 
+        "ON_COLLISION_WALL": [
+            {
+                "params": [], 
+                "accion": "GAME_OVER", 
+                "objeto": null
+            }
+        ], 
+        "ON_LINE_CLEAR": [], 
+        "ON_KEY_UP": []
     }
 }
