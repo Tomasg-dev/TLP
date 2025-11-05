@@ -435,7 +435,7 @@
                 "objeto": "CURRENT_PIECE"
             }
         ], 
-        "ON_COLLISION_SELF": [], 
+        "ON_EAT_VENOM": [], 
         "ON_TSUNAMI": [
             {
                 "params": [], 
@@ -468,6 +468,7 @@
                 "objeto": "CURRENT_PIECE"
             }
         ], 
+        "ON_EAT_SLOW": [], 
         "ON_KEY_DOWN": [
             {
                 "params": [
@@ -477,6 +478,7 @@
                 "objeto": "CURRENT_PIECE"
             }
         ], 
+        "ON_COLLISION_SELF": [], 
         "ON_ESPEJO": [], 
         "ON_COLLISION_WALL": [], 
         "ON_LINE_CLEAR": [

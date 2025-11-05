@@ -221,7 +221,7 @@ def transform_ast(symbol_table):
         "config": {},
         "shapes": {}, # Solo usado por TETRIS
         "events": {
-            # Eventos generales (necesarios para el Runtime)
+            # Eventos generales
             "ON_START": [],
             "ON_TICK": [],
             # Eventos específicos de Tetris
@@ -234,7 +234,7 @@ def transform_ast(symbol_table):
             "ON_EAT_VENOM": [], # Fruta venenosa
             "ON_COLLISION_WALL": [],
             "ON_COLLISION_SELF": [],
-            # Eventos de teclado (compartidos, pero las acciones varían)
+            # Eventos de teclado
             "ON_KEY_UP": [],
             "ON_KEY_DOWN": [],
             "ON_KEY_LEFT": [],
@@ -380,8 +380,18 @@ def transform_ast(symbol_table):
     return ast_runtime
 
 # --- Zona de ejecucion ---
-# 1. Especifica la ruta del archivo a procesar
-file_path = "games\Snake.brik"
+# 1. Verificar el argumento de línea de comandos (el path al archivo .brik)
+if len(sys.argv) != 2:
+    print ("Uso: python analizador.py <ruta_al_archivo.brik>")
+    sys.exit(1)
+
+file_path = sys.argv[1] # Toma el argumento del .bat!
+
+# Determinar la ruta de salida del JSON (reemplazando .brik por .json)
+if not file_path.lower().endswith('.brik'):
+    print ("Error: El archivo debe tener la extensión .brik")
+    sys.exit(1)
+    
 ast_file_path = file_path.replace('.brik', '.json')
 
 # 2. Carga el contenido del archivo
