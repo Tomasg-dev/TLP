@@ -71,7 +71,7 @@ class controles = {
     str mover_abajo = "s"
     str mover_derecha = "d"
     str mover_izquierda = "a"
-    str pausa = "esc"
+    str salir = "q"
 }
 
 //Reglas//

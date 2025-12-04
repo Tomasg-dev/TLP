@@ -19,7 +19,7 @@ echo Compilando el juego: %1...
 echo ----------------------------------
 
 REM Ejecuta el compilador de Python.
-C:\Python27\python.exe .\analizador.py .\games\%1.brik
+C:\Python27\python.exe .\compiler.py .\games\%1.brik
 
 REM Verifica si el comando anterior (la compilacion) fallo.
 REM sys.exit(1) en Python establece el 'errorlevel' a 1.

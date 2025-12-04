@@ -1,0 +1,51 @@
+=============================================================
+      BrickScript: Requisitos de Instalacion y Ejecucion
+=============================================================
+
+Este documento describe el software necesario y los pasos para compilar y ejecutar los juegos creados con el lenguaje BrickScript.
+
+
+-------------------------------------------------------------
+             1. Requisitos de Software
+-------------------------------------------------------------
+
+Este proyecto fue diseñado para ser extremadamente ligero y compatible con sistemas operativos antiguos, cumpliendo con la restriccion de caber en un disquete.
+
+* Sistema Operativo: Windows XP o superior (Windows 7, 8, 10, 11).
+* Interprete de Python: Se requiere Python 2.7.
+* Dependencias: Ninguna. El proyecto completo utiliza unicamente la libreria estandar de Python 2.7. No es necesario instalar paquetes o modulos adicionales.
+
+
+-------------------------------------------------------------
+            2. Estructura de Archivos del Proyecto
+-------------------------------------------------------------
+
+Para que los scripts funcionen correctamente, los archivos deben estar organizados de la siguiente manera:
+
+    C:\TPL\
+    |
+    +--- compiler.py         (El compilador que traduce .brick a .json)
+    +--- runtime.py          (El motor que ejecuta los juegos .json)
+    +--- jugar.bat           (El script para compilar y jugar facilmente)
+    +--- README.txt          (Informacion general del lenguaje)
+    +--- REQUISITOS...txt    (Este archivo)
+    |
+    \--- games\
+         +--- tetris.brick    (Codigo fuente del juego Tetris)
+         +--- snake.brick     (Codigo fuente del juego Snake)
+         \--- (Aqui se generaran los archivos .json)
+
+
+-------------------------------------------------------------
+## 3. Como Compilar y Ejecutar un Juego
+-------------------------------------------------------------
+
+La forma mas sencilla de jugar es utilizando el script `jugar.bat`.
+
+1. Abre una terminal de comandos (cmd.exe) y ubicate en la dirección principal del proyecto (esta dirección depende de en dónde hayas guardado los archivos).
+2. Una vez estés situado en la dirección principal del proyecto, ejecuta los siguientes comandos para jugar:
+    PARA EL SNAKE: .\jugar.bat Snake
+    PARA EL TETRIS: .\jugar.bat TETRIS
+
+Esto lo que va a hacer es ejecutar primero el compilador para la creación (en caso de que no existan aún) del archivo .json correspondiente al juego que seleccionaste.
+Después, lo que hace es ejecutar el runtime que va a leer el respectivo .json creado para poder ejecutar el juego.

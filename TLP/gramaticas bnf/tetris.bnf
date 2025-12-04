@@ -1,0 +1,51 @@
+<programa> ::= <seccion_conceptos> <seccion_figuras> <seccion_reglas> <seccion_controles> <lista_figuras>
+
+<seccion_conceptos> ::= <def_nombre> <def_grid> <def_velocidad>
+
+<def_nombre> ::= "str" "nombre_juego" "=" <cadena>
+<def_grid> ::= "list" "dimension" "=" "[" <entero> "," <entero> "]"
+<def_velocidad> ::= "int" "velocidad_inicial" "=" <entero>
+
+<seccion_figuras> ::= <def_figura> | <def_figura> <seccion_figuras>
+
+<def_figura> ::= "class" <identificador> "=" "{"
+                   "str" "color" "=" <cadena>
+                   "list" "rotaciones" "=" <lista_rotaciones>
+                 "}"
+
+
+<coordenada> ::= "[" <entero> "," <entero> "]"
+<lista_coordenadas> ::= "[" <coordenada> <resto_coordenadas>"]"
+<resto_coordenadas> ::=  | "," <coordenada> <resto_coordenadas>
+<rotacion> ::= <lista_coordenadas>
+<lista_rotaciones> ::= "[" <rotacion> <resto_rotaciones>"]"
+<resto_rotaciones> ::=  | "," <rotacion> <resto_rotaciones>
+
+<seccion_reglas> ::= <def_regla> | <def_regla> <seccion_reglas>
+
+<def_regla> ::= "class" <identificador> "=" "{" <atributos_regla> "}"
+
+<atributos_regla> ::= <atributo_regla> | <atributo_regla> <atributos_regla>
+<atributo_regla> ::= "str" "evento" "=" <cadena>
+                    | "str" "accion" "=" <cadena>
+                    | "int" "puntos" "=" <entero>
+                    | "list" "multiplicador_puntos" "=" "[" <entero> <numeros_multiplicador> "]"
+                    | "float" "aumento_velocidad" "=" <flotante>
+                    | "int" "duracion" "=" <entero>
+                    | "int" "destruccion" "=" <entero>
+                    | "int" "radio" "=" <entero>
+<numeros_multiplicador> ::= | "," <entero> <numeros_multiplicador> 
+
+<seccion_controles> ::= "class" "controles" "=" "{" <asignaciones_control>"}"
+<asignaciones_control> ::= <asignacion_control> | <asignacion_control> <asignaciones_control>
+<asignacion_control> ::= "str" <identificador> "=" <cadena>
+
+<lista_figuras> ::= "list" "figuras_disponibles" "=" "[" <lista_identificadores> "]"
+<lista_identificadores> ::= <identificador> | <identificador> "," <lista_identificadores>
+
+<cadena> ::= <letra> | "#" | <letra> <cadena>
+<entero> ::= <digito> | <digito> <entero>
+<flotante> ::= <entero> "." <entero>
+<identificador> ::= <letra> | <letra> <identificador>
+<letra> ::= "A"..."Z" | "a"..."z" | "_"
+<digito> ::= "0"..."9"

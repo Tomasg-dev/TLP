@@ -130,7 +130,7 @@ class controles = {
     str mover_izquierda = "a"
     str mover_derecha = "d"
     str acelerar_abajo = "s"
-    str pausa = "esc"
+    str salir = "q"
     str boton_tsunami = "t"
     str boton_bomba = "k"
 }

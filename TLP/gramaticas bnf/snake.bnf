@@ -1,0 +1,57 @@
+<programa> ::= <seccion_conceptos> <seccion_serpiente> <seccion_frutas> <seccion_controles> <seccion_reglas> <lista_frutas>
+
+<seccion_conceptos> ::= <def_nombre> <def_grid> <def_color_serpiente> <def_velocidad>
+
+<def_nombre> ::= "str" "nombre" "=" <cadena>
+<def_grid> ::= "list" "tablero" "=" "[" <entero> "," <entero> "]"
+<def_color_serpiente> ::= "str" "color" "=" <cadena>
+<def_velocidad> ::= "int" "velocidad_inicial" "=" <entero>
+
+<seccion_serpiente> ::= "class" "la_cobra" "=" "{" <tamano_serpiente> <cuerpo_serpiente> <color_serpiente> "}"
+
+<tamano_serpiente> ::= "int" "tamano_inicial" "=" <entero>
+<cuerpo_serpiente> ::= "list" "cuerpo" "=" "[" <lista_cuerpo_serpiente> "]"
+<lista_cuerpo_serpiente> ::= <coordenada> | <coordenada> "," <lista_cuerpo_serpiente>
+<coordenada> ::= "[" <entero> "," <entero> "]"
+<color_serpiente> ::= "str" "color" "=" <cadena>
+
+<seccion_frutas> ::= <def_fruta> | <def_fruta> <seccion_frutas>
+<def_fruta> ::= "class" <identificador> "=" "{" 
+                "str" "color" "=" <cadena>
+                "str" "evento" "=" <cadena>
+                "}"
+
+<seccion_controles> ::= "class" "controles" "=" "{" <asignaciones_control>"}"
+<asignaciones_control> ::= <asignacion_control> | <asignacion_control> <asignaciones_control>
+<asignacion_control> ::= "str" <identificador> "=" <cadena>
+
+<seccion_reglas> ::= <def_regla> | <def_regla> <seccion_reglas>
+<def_regla> ::= "class" <identificador> "=" "{" <atributos_regla> "}"
+
+<atributos_regla> ::= <atributo_regla> | <atributo_regla> <atributos_regla>
+<atributo_regla> ::= "str" "evento" "=" <cadena>
+                    | "list" "evento" "=" "[ <cadena> "," <cadena>"]"
+                    | "str" "accion" "=" <cadena>
+                    | "int" "puntos" "=" <entero>
+                    | "list" "multiplicadores" "=" "[" <entero> <numeros_multiplicador> "]"
+                    | "float" "factor_velocidad" "=" <flotante>
+                    | "int" "factor_velocidad" "=" <entero>
+                    | "float" "probabilidad_manzana" "=" <flotante>
+                    | "float" "probabilidad_chontaduro" "=" <flotante>
+                    | "float" "probabilidad_borojo" "=" <flotante>
+                    | "float" "probabilidad_veneno" "=" <flotante>
+                    | "int" "crecimiento" "=" <entero>
+                    | "int" "duracion" "=" <entero>
+<numeros_multiplicador> ::= | "," <entero> <numeros_multiplicador>
+
+<lista_frutas> ::= "list" "frutas_disponibles" "=" "[" <lista_identificadores> "]"
+<lista_identificadores> ::= <identificador> | <identificador> "," <lista_identificadores>
+
+
+
+<cadena> ::= <letra> | "#" | <letra> <cadena>
+<entero> ::= <digito> | <digito> <entero>
+<flotante> ::= <entero> "." <entero>
+<identificador> ::= <letra> | <letra> <identificador>
+<letra> ::= "A"..."Z" | "a"..."z" | "_"
+<digito> ::= "0"..."9"

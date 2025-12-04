@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
 
-# runtime.py
-# Motor de juego para BrickScript (Version Final y Depurada)
-# Uso: python runtime.py <archivo_juego.json>
-
 import sys
 import json
 import os
 import time
 import random
-import msvcrt
+import Tkinter as tk
 
 class Juego:
-    def __init__(self, datos_juego):
+    def __init__(self, datos_juego, root):
         self.datos_juego = datos_juego
         self.tipo_juego = self.datos_juego.get('tipo_juego', 'TETRIS')
         config = self.datos_juego.get('config', {})
         self.ancho = config.get('grid_size', [10, 20])[0]
         self.alto = config.get('grid_size', [10, 20])[1]
-        self.grid = [[0 for _ in range(self.ancho)] for _ in range(self.alto)]
+        self.grid = [[None for _ in range(self.ancho)] for _ in range(self.alto)]
         self.puntuacion = 0
         self.probabilidad_poderes = 0.5
         self.juego_terminado = False
@@ -45,135 +41,205 @@ class Juego:
         self.timer_gravedad = 0
         self.ejecutar_evento('ON_START')
 
-    def run(self):
-        tiempo_anterior = time.time()
-        while not self.juego_terminado:
-            delta_tiempo = time.time() - tiempo_anterior
-            tiempo_anterior = time.time()
-            # Lógica de temporizador para el Modo Espejo
-            tiempo_actual = time.time()
-            if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
-                self.modo_espejo = False
-                self.tiempo_fin_espejo = 0.0
-            # Lógica de temporizador para el Modo Lento
-            if self.tipo_juego == "SNAKE":
-                tiempo_actual = time.time()
-                if self.modo_lento and tiempo_actual >= self.tiempo_fin_lento:
-                    self.modo_lento = False
-                    self.tiempo_fin_lento = 0.0
-                    self.velocidad_gravedad = self.velocidad_base_snake # Restauramos la velocidad original de la serpiente
-            self.manejar_input()
-            self.timer_gravedad += delta_tiempo
-            if self.timer_gravedad > self.velocidad_gravedad:
-                self.timer_gravedad = 0
-                self.ejecutar_evento('ON_TICK')
-            self.dibujar()
-            time.sleep(0.05)
-        self.mostrar_game_over()
+        # Configuración de Tkinter
+        self.root = root
+        self.tamano_celda = 20 # pixeles
+        canvas_ancho = self.ancho * self.tamano_celda + 20
+        canvas_alto = self.alto * self.tamano_celda + 20
 
-    def manejar_input(self):
-        if msvcrt.kbhit():
-            key = msvcrt.getch()
-            
-            if self.tipo_juego == 'TETRIS':
-                if not self.modo_espejo:
-                    if key == 'w': self.ejecutar_evento('ON_KEY_UP')
-                    elif key == 's': self.ejecutar_evento('ON_KEY_DOWN')
-                    elif key == 'a': self.ejecutar_evento('ON_KEY_LEFT')
-                    elif key == 'd': self.ejecutar_evento('ON_KEY_RIGHT')
-                    elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
-                    elif key == 'k': self.ejecutar_evento('ON_BOMB')
-                else:
-                    if key == 'w': self.ejecutar_evento('ON_KEY_DOWN')
-                    elif key == 's': self.ejecutar_evento('ON_KEY_UP')
-                    elif key == 'a': self.ejecutar_evento('ON_KEY_RIGHT')
-                    elif key == 'd': self.ejecutar_evento('ON_KEY_LEFT')
-                    elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
-                    elif key == 'k': self.ejecutar_evento('ON_BOMB')
-            elif self.tipo_juego == 'SNAKE':
-                if not self.modo_espejo:
-                    if key == 'w': self.snake_cambiar_direccion('UP')
-                    elif key == 's': self.snake_cambiar_direccion('DOWN')
-                    elif key == 'a': self.snake_cambiar_direccion('LEFT')
-                    elif key == 'd': self.snake_cambiar_direccion('RIGHT')
-                else:
-                    if key == 'w': self.snake_cambiar_direccion('DOWN')
-                    elif key == 's': self.snake_cambiar_direccion('UP')
-                    elif key == 'a': self.snake_cambiar_direccion('RIGHT')
-                    elif key == 'd': self.snake_cambiar_direccion('LEFT')
+        self.canvas = tk.Canvas(root, width=canvas_ancho, height=canvas_alto, bg='black')
+        self.canvas.pack()
 
-            if key == 'q':
-                self.juego_terminado = True
+        # Panel de información a la derecha
+        self.info_frame = tk.Frame(root, bg='black')
+        self.info_frame.pack(side=tk.RIGHT, padx=10, pady=10, anchor='n')
+        self.punt_label = tk.Label(self.info_frame, text="PUNTUACIÓN: 0", fg='white', bg='black', font=('Courier', 12))
+        self.punt_label.pack(anchor='w')
+        self.controls_label = tk.Label(self.info_frame, text="CONTROLES:\nWASD\n'q': Salir", fg='white', bg='black', font=('Courier', 10), justify=tk.LEFT)
+        self.controls_label.pack(anchor='w', pady=(10,0))
+
+        self.poderes_label = tk.Label(self.info_frame, text="", fg='yellow', bg='black', font=('Courier', 10), justify=tk.LEFT)
+        self.poderes_label.pack(anchor='w', pady=(10,0))
+
+        self.efectos_label = tk.Label(self.info_frame, text="", fg='cyan', bg='black', font=('Courier', 10), justify=tk.LEFT)
+        self.efectos_label.pack(anchor='w', pady=(10,0))
+
+        #Guía de frutas para el Snake
+        if self.tipo_juego == 'SNAKE':
+            tk.Label(self.info_frame, text="GUIA DE FRUTAS:", fg='cyan', bg='black', font=('Courier', 10, 'bold')).pack(anchor='w', pady=(10,0))
+        # Manzana @@ → rojo
+        self.fruta_manzana = tk.Label(self.info_frame, text="Manzana", fg='#FF0000', bg='black', font=('Courier', 10))
+        self.fruta_manzana.pack(anchor='w')
+        # Borojo ?? → naranja
+        self.fruta_borojo = tk.Label(self.info_frame, text="Borojo", fg='#FF8000', bg='black', font=('Courier', 10))
+        self.fruta_borojo.pack(anchor='w')
+        # Chontaduro && → dorado
+        self.fruta_chontaduro = tk.Label(self.info_frame, text="Chontaduro", fg='#FFD700', bg='black', font=('Courier', 10))
+        self.fruta_chontaduro.pack(anchor='w')
+        # Venenosa !! → morado
+        self.fruta_venenosa = tk.Label(self.info_frame, text="Venenosa", fg='#8B008B', bg='black', font=('Courier', 10))
+        self.fruta_venenosa.pack(anchor='w')
+        # Vincular teclas
+        root.bind('<Key>', self.manejar_input)
+        self.root.protocol('WM_DELETE_WINDOW', self.salir)
+
+        # Colores para el Tetris
+        self.colores_tetris = {
+            'FIGURA_LINEA': '#0EC2E6', 
+            'FIGURA_CUADRO': '#F1F505',  
+            'FIGURA_T': '#A020F0',  
+            'FIGURA_S': '#00FF00',  
+            'FIGURA_Z': '#F5023B',  
+            'FIGURA_PISTOLA_INVERSA': '#050DF5',  
+            'FIGURA_PISTOLA_DERECHA': '#FFA500'   
+        }
+
+        # Iniciar bucle del juego
+        self.ultima_actualizacion = time.time()
+        self.actualizar()
+    
+    def manejar_input(self, event):
+        key = event.char.lower()
+        if key == 'q':
+            self.juego_terminado = True
+            self.root.quit()
+
+        elif self.tipo_juego == 'TETRIS':
+            if not self.modo_espejo:
+                if key == 'w': self.ejecutar_evento('ON_KEY_UP')
+                elif key == 's': self.ejecutar_evento('ON_KEY_DOWN')
+                elif key == 'a': self.ejecutar_evento('ON_KEY_LEFT')
+                elif key == 'd': self.ejecutar_evento('ON_KEY_RIGHT')
+                elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
+                elif key == 'k': self.ejecutar_evento('ON_BOMB')
+            else:
+                if key == 'w': self.ejecutar_evento('ON_KEY_DOWN')
+                elif key == 's': self.ejecutar_evento('ON_KEY_UP')
+                elif key == 'a': self.ejecutar_evento('ON_KEY_RIGHT')
+                elif key == 'd': self.ejecutar_evento('ON_KEY_LEFT')
+                elif key == 't': self.ejecutar_evento('ON_TSUNAMI')
+                elif key == 'k': self.ejecutar_evento('ON_BOMB')
+        elif self.tipo_juego == 'SNAKE':
+            if not self.modo_espejo:
+                if key == 'w': self.snake_cambiar_direccion('UP')
+                elif key == 's': self.snake_cambiar_direccion('DOWN')
+                elif key == 'a': self.snake_cambiar_direccion('LEFT')
+                elif key == 'd': self.snake_cambiar_direccion('RIGHT')
+            else:
+                if key == 'w': self.snake_cambiar_direccion('DOWN')
+                elif key == 's': self.snake_cambiar_direccion('UP')
+                elif key == 'a': self.snake_cambiar_direccion('RIGHT')
+                elif key == 'd': self.snake_cambiar_direccion('LEFT')
+
 
 
     def dibujar(self):
-        os.system('cls')
-        grid_display = [list(fila) for fila in self.grid]
-        
-        if self.tipo_juego == 'TETRIS' and self.pieza_actual:
-            matriz_pieza = self.pieza_actual[self.pieza_rotacion]
-            for y_offset, fila in enumerate(matriz_pieza):
-                for x_offset, celda in enumerate(fila):
-                    if celda == 1:
-                        if self.pieza_y + y_offset < len(grid_display) and self.pieza_x + x_offset < len(grid_display[0]):
-                           grid_display[self.pieza_y + y_offset][self.pieza_x + x_offset] = 2
+        self.canvas.delete("all")
+        # Dibujar borde del área de juego
+        self.canvas.create_rectangle(5, 5,
+                                     self.ancho * self.tamano_celda + 5,
+                                     self.alto * self.tamano_celda + 5,
+                                     outline='white', width=2)
+        if self.tipo_juego == 'TETRIS':
+            # Dibujar celdas fijas y pieza actual con colores
+            for y in range(self.alto):
+                for x in range(self.ancho):
+                    pieza_nombre = self.grid[y][x]
+                    x1 = x * self.tamano_celda + 5
+                    y1 = y * self.tamano_celda + 5
+                    x2 = x1 + self.tamano_celda
+                    y2 = y1 + self.tamano_celda
 
-        if self.tipo_juego == 'SNAKE':
-            for i, segmento in enumerate(self.serpiente_cuerpo):
-                x, y = segmento
-                if 0 <= y < self.alto and 0 <= x < self.ancho:
-                    grid_display[y][x] = 3 if i == 0 else 2
-            if self.posicion_comida:
-                x, y = self.posicion_comida
-                if 0 <= y < self.alto and 0 <= x < self.ancho:
-                    grid_display[y][x] = 4
+                    color = 'black'
+                    outline = 'gray'
 
-        buffer_pantalla = ["#" * (self.ancho * 2 + 4)]
-        for y in range(self.alto):
-            linea = "# "
-            for x in range(self.ancho):
-                celda = grid_display[y][x]
-                if celda == 0: linea += "  "
-                elif celda == 1: linea += "[]"
-                elif celda == 2: linea += "[]"
-                elif celda == 3: linea += "OO"
-                elif celda == 4: linea += self.fruta_actual
-            linea += " #"
-            if y == 2: linea += "    PUNTUACION: " + str(self.puntuacion)
-            if y == 4: linea += "    CONTROLES:"
-            if y == 5: linea += "     WASD"
-            if y == 6: linea += "     'q': Salir"
-            if self.tipo_juego == "SNAKE":
-                if y == 8: linea += "      GUIA DE FRUTAS:"
-                if y == 9: linea += "      @@: Manzana"
-                if y == 10: linea += "      ??: Borojo"
-                if y == 11: linea += "      &&: Chontaduro"
-                if y == 12: linea += "      !!: Fruta Venenosa"
-            if self.tipo_juego == "TETRIS":
-                if len(self.poderes_tetris) != 0:
-                    if y == 8: linea += "    PODERES:"
-                    if len(self.poderes_tetris) == 2:
-                        if y == 9: linea += "     TSUNAMI(T)"
-                        if y == 10: linea += "      BOMBA(K)"
-                    else:
-                        if self.poderes_tetris[0] == "tsunami":
-                            if y == 9: linea += "     TSUNAMI(T)"
+                    if pieza_nombre is not None:
+                        # Celda fija: usar color del tipo de pieza
+                        color = self.colores_tetris.get(pieza_nombre, '#FFFFFF')
+                    elif self.pieza_actual:
+                        # Ver si esta celda pertenece a la pieza actual
+                        y_loc = y - self.pieza_y
+                        x_loc = x - self.pieza_x
+                        matriz_pieza = self.pieza_actual[self.pieza_rotacion]
+                        if (0 <= y_loc < len(matriz_pieza) and
+                            0 <= x_loc < len(matriz_pieza[0]) and
+                            matriz_pieza[y_loc][x_loc] == 1):
+                            color = self.colores_tetris.get(self.nombre_pieza_actual, '#AAAAAA')
+                            outline = 'white'
+
+                    if color != 'black':
+                        self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=outline)
+
+        elif self.tipo_juego == 'SNAKE':
+            # Dibujar serpiente y comida
+            for y in range(self.alto):
+                for x in range(self.ancho):
+                    x1 = x * self.tamano_celda + 5
+                    y1 = y * self.tamano_celda + 5
+                    x2 = x1 + self.tamano_celda
+                    y2 = y1 + self.tamano_celda
+
+                    color = 'black'
+                    outline = 'gray'
+
+                    # Dibujar cuerpo de la serpiente
+                    if (x, y) in self.serpiente_cuerpo:
+                        idx = self.serpiente_cuerpo.index((x, y))
+                        if idx == 0:
+                            color = '#FFFF00'  # cabeza
                         else:
-                            if y == 9: linea += "      BOMBA(K)"
-                else:
-                    if y == 9: linea += "     No tienes poderes disponibles"
-            if self.modo_espejo:
-                tiempo_restante = max(0, self.tiempo_fin_espejo - time.time())
-                tiempo_str = "{:.1f}".format(tiempo_restante)
-                if y == 15: linea += "      Modo espejo: INVERTIDO ({0}s)".format(tiempo_str)
-            if self.tipo_juego == "SNAKE":
-                if self.modo_lento:
-                    tiempo_restante = max(0, self.tiempo_fin_lento - time.time())
-                    tiempo_str = "{:.1f}".format(tiempo_restante)
-                    if y == 16: linea += "      Modo lento: ACTIVO ({0}s)".format(tiempo_str)
-            buffer_pantalla.append(linea)
-        buffer_pantalla.append("#" * (self.ancho * 2 + 4))
-        print ("\n".join(buffer_pantalla))
+                            color = '#00FF00'  # cuerpo
+
+                    # Dibujar comida
+                    elif self.posicion_comida and (x, y) == self.posicion_comida:
+                        if self.fruta_actual == '@@':
+                            color = '#FF0000'   # manzana
+                        elif self.fruta_actual == '??':
+                            color = '#FF8000'   # borojo
+                        elif self.fruta_actual == '&&':
+                            color = '#FFD700'   # chontaduro
+                        elif self.fruta_actual == '!!':
+                            color = '#8B008B'   # venenosa
+
+                    if color != 'black':
+                        self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=outline)
+
+        # ACTUALIZAR PANEL DE INFORMACIÓN
+        self.punt_label.config(text="PUNTUACIÓN: {}".format(self.puntuacion))
+
+        # Poderes (solo Tetris)
+        poderes_texto = ""
+        if self.tipo_juego == "TETRIS":
+            if self.poderes_tetris:
+                if "tsunami" in self.poderes_tetris:
+                    poderes_texto += "TSUNAMI (T)\n"
+                if "bomba" in self.poderes_tetris:
+                    poderes_texto += "BOMBA (K)\n"
+            else:
+                poderes_texto = "No tienes poderes"
+        self.poderes_label.config(text=poderes_texto)
+
+        # Efectos activos
+        efectos_texto = ""
+        if self.modo_espejo:
+            tiempo_restante = max(0, self.tiempo_fin_espejo - time.time())
+            efectos_texto += "Modo espejo: INVERTIDO ({:.1f}s)\n".format(tiempo_restante)
+        if self.tipo_juego == "SNAKE" and self.modo_lento:
+            tiempo_restante = max(0, self.tiempo_fin_lento - time.time())
+            efectos_texto += "Modo lento: ACTIVO ({:.1f}s)\n".format(tiempo_restante)
+        self.efectos_label.config(text=efectos_texto)
+
+        # Mostrar/ocultar guía de frutas (Solo Snake)
+        if self.tipo_juego == "SNAKE":
+            self.fruta_manzana.pack()
+            self.fruta_borojo.pack()
+            self.fruta_chontaduro.pack()
+            self.fruta_venenosa.pack()
+        else:
+            self.fruta_manzana.pack_forget()
+            self.fruta_borojo.pack_forget()
+            self.fruta_chontaduro.pack_forget()
+            self.fruta_venenosa.pack_forget()
 
     def ejecutar_evento(self, nombre_evento):
         if nombre_evento in self.datos_juego['events']:
@@ -200,7 +266,10 @@ class Juego:
     def tetris_spawn_pieza(self):
         nombre_pieza = random.choice(self.datos_juego['shapes'].keys())
         self.pieza_actual = self.datos_juego['shapes'][nombre_pieza]
-        self.pieza_x, self.pieza_y, self.pieza_rotacion = self.ancho / 2 - 2, 0, 0
+        self.nombre_pieza_actual = nombre_pieza
+        self.pieza_x = self.ancho // 2 - 2
+        self.pieza_y = 0
+        self.pieza_rotacion = 0
         if self.tetris_verificar_colision(self.pieza_x, self.pieza_y, self.pieza_rotacion):
             self.juego_terminado = True
     
@@ -223,13 +292,16 @@ class Juego:
             self.pieza_rotacion = nueva_rotacion
 
     def tetris_fijar_pieza(self):
+        if not self.pieza_actual or not self.nombre_pieza_actual:
+            return
         matriz_pieza = self.pieza_actual[self.pieza_rotacion]
         for y_offset, fila in enumerate(matriz_pieza):
             for x_offset, celda in enumerate(fila):
                 if celda == 1:
                     if 0 <= self.pieza_y + y_offset < self.alto and 0 <= self.pieza_x + x_offset < self.ancho:
-                        self.grid[self.pieza_y + y_offset][self.pieza_x + x_offset] = 1
+                        self.grid[self.pieza_y + y_offset][self.pieza_x + x_offset] = self.nombre_pieza_actual
         self.pieza_actual = None
+        self.nombre_pieza_actual = None
         self.tetris_limpiar_lineas()
         self.ejecutar_evento('ON_START')
 
@@ -240,61 +312,52 @@ class Juego:
             for x_offset, celda in enumerate(fila):
                 if celda == 1:
                     nuevo_x, nuevo_y = x + x_offset, y + y_offset
-                    if not (0 <= nuevo_x < self.ancho and 0 <= nuevo_y < self.alto and self.grid[nuevo_y][nuevo_x] == 0):
+                    if not (0 <= nuevo_x < self.ancho and 0 <= nuevo_y < self.alto):
+                        return True
+                    if self.grid[nuevo_y][nuevo_x] is not None:
                         return True
         return False
 
     def tetris_limpiar_lineas(self):
-        nuevo_grid = [fila for fila in self.grid if not all(fila)]
-        lineas_limpias = self.alto - len(nuevo_grid)
+        nuevo_grid = []
+        lineas_limpias = 0
+        for fila in self.grid:
+            if all(celda is not None for celda in fila):
+                lineas_limpias += 1
+            else:
+                nuevo_grid.append(fila)
         if lineas_limpias > 0:
-            self.grid = [[0] * self.ancho for _ in range(lineas_limpias)] + nuevo_grid
-            for _ in range(lineas_limpias): self.ejecutar_evento('ON_LINE_CLEAR')
+            # Añadir filas vacías arriba
+            vacio = [None] * self.ancho
+            self.grid = [vacio[:] for _ in range(lineas_limpias)] + nuevo_grid
+            for _ in range(lineas_limpias):
+                self.ejecutar_evento('ON_LINE_CLEAR')
             self.generar_poderes_tetris()
             self.funcion_modo_espejo()
     
     def tetris_tsunami(self):
         if "tsunami" in self.poderes_tetris:
             nuevo_grid = [fila for fila in self.grid[:-2]]
-            self.grid = [[0] * self.ancho for _ in range(2)] + nuevo_grid
-            for _ in range(2): self.ejecutar_evento('ON_LINE_CLEAR')   
+            vacio = [None] * self.ancho
+            self.grid = [vacio[:], vacio[:]] + nuevo_grid
+            for _ in range(2):
+                self.ejecutar_evento('ON_LINE_CLEAR')   
             self.poderes_tetris.remove("tsunami")
 
 #Método usado para el poder de Bomba
     def tetris_aplicar_gravedad_a_matriz(self, fila_inicio):
-            """
-            Aplica la gravedad a las celdas de la matriz. 
-            Revisa columna por columna desde abajo para hacer caer los bloques.
-            """
-            # Itera sobre cada columna
-            for x in range(self.ancho):
-                # Mantener una lista de bloques (no vacíos) en la columna
-                columna_bloques = []
-                
-                # Recorre la columna de abajo hacia arriba para recolectar los bloques
-                # Solo recogemos los que son bloques fijos (celda == 1)
-                for y in range(self.alto):
-                    if self.grid[y][x] == 1:
-                        columna_bloques.append(1)
-                
-                # Recorre la columna de abajo hacia arriba para re-dibujar los bloques
-                # La gravedad los obliga a empezar desde el fondo.
-                for y in range(self.alto):
-                    
-                    # Calcular la posición desde el fondo: 
-                    # (self.alto - 1) es la última fila (fondo)
-                    # k es el índice del bloque en la lista de bloques_fijos (0 es el más bajo)
-                    indice_desde_fondo = self.alto - 1 - y
-                    
-                    if indice_desde_fondo < len(columna_bloques):
-                        # Si todavía hay bloques para dibujar en esta columna
-                        self.grid[y][x] = 1 
-                    else:
-                        # Si ya no hay más bloques, la celda está vacía
-                        self.grid[y][x] = 0
-
-            # Al final, limpiamos las líneas completas que pudieran haberse formado al caer
-            self.tetris_limpiar_lineas()
+        for x in range(self.ancho):
+            columna_bloques = []
+            for y in range(self.alto):
+                if self.grid[y][x] is not None:
+                    columna_bloques.append(self.grid[y][x])
+            # Volver a llenar la columna desde abajo
+            for y in range(self.alto - 1, -1, -1):
+                if columna_bloques:
+                    self.grid[y][x] = columna_bloques.pop()
+                else:
+                    self.grid[y][x] = None
+        self.tetris_limpiar_lineas()
 
     def tetris_bomba(self):
             
@@ -422,20 +485,64 @@ class Juego:
             pass # No hace nada si la serpiente está en su estado inicial
 
     def mostrar_game_over(self):
-        os.system('cls')
-        print ("\n\n" + " " * 10 + "=================\n" + " " * 10 + "  JUEGO TERMINADO\n" + " " * 10 + "=================\n" + " " * 10 + " Puntuacion Final: " + str(self.puntuacion) + "\n\n" + " " * 10 + "Presiona cualquier tecla para salir.")
-        msvcrt.getch()
+        self.canvas.delete("all")
+        self.canvas.create_text(self.ancho * self.tamano_celda // 2 + 5,
+                                self.alto * self.tamano_celda // 2,
+                                text="JUEGO TERMINADO\nPuntuación: {}".format(self.puntuacion),
+                                fill="red", font=("Courier", 16, "bold"), justify=tk.CENTER)
+        self.root.after(3000, self.salir)  # Cierra después de 3 segundos
+    
+    def salir(self):
+        self.root.quit()
+        self.root.destroy()
+
+    def actualizar(self):
+        if self.juego_terminado:
+            self.mostrar_game_over()
+            return
+        
+        tiempo_actual = time.time()
+        delta_tiempo = tiempo_actual - self.ultima_actualizacion
+        self.ultima_actualizacion = tiempo_actual
+
+        # Temporizadores
+        if self.modo_espejo and tiempo_actual >= self.tiempo_fin_espejo:
+            self.modo_espejo = False
+            self.tiempo_fin_espejo = 0.0
+
+        if self.tipo_juego == "SNAKE" and self.modo_lento and tiempo_actual >= self.tiempo_fin_lento:
+            self.modo_lento = False
+            self.tiempo_fin_lento = 0.0
+            self.velocidad_gravedad = self.velocidad_base_snake
+        
+        self.timer_gravedad += delta_tiempo
+        if self.timer_gravedad > self.velocidad_gravedad:
+            self.timer_gravedad = 0
+            self.ejecutar_evento('ON_TICK')
+        
+        self.dibujar()
+        # Programar próxima actualización
+        self.root.after(20, self.actualizar)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print ("Uso: python runtime.py <archivo_juego.json>")
+        print("Uso: python runtime.py <archivo_juego.json>")
         sys.exit(1)
+
     archivo_juego = sys.argv[1]
     try:
         with open(archivo_juego, 'r') as f:
             datos_juego = json.load(f)
     except IOError:
-        print ("Error: No se pudo encontrar el archivo " + archivo_juego)
+        print("Error: No se pudo encontrar el archivo " + archivo_juego)
         sys.exit(1)
-    juego = Juego(datos_juego)
-    juego.run()
+
+    root = tk.Tk()
+    root.title("BrickScript - Juego")
+    root.resizable(False, False)
+    # Forzar ventana al frente (opcional en XP)
+    root.attributes('-topmost', True)
+    root.after(100, lambda: root.attributes('-topmost', False))
+
+    juego = Juego(datos_juego, root)
+    root.mainloop()
